@@ -13,7 +13,7 @@ import android.widget.TextView;
 
 public class MainActivity extends AppCompatActivity {
 
-    private Button OneButton, TwoButton, ThreeButton, FourButton, FiveButton, SixButton,SevenButton, EightButton, NineButton, ZeroButton, AddButton, DivideButton, MultiButton, SubButtton, ClearButton, EquallyButton;
+    private Button OneButton, TwoButton, ThreeButton, FourButton, FiveButton, SixButton, SevenButton, EightButton, NineButton, ZeroButton, AddButton, DivideButton, MultiButton, SubButtton, ClearButton, EquallyButton;
     private TextView ResultText;
 
     private boolean DB = false;
@@ -21,7 +21,7 @@ public class MainActivity extends AppCompatActivity {
     private boolean MathOp = true;
 
     private static long Result;
-    private  CalculatorDao calc;
+    private CalculatorDao calc;
 
     private String Operation;
     private long Previous;
@@ -48,7 +48,7 @@ public class MainActivity extends AppCompatActivity {
 
                 calc = db.calculatorDao();
 
-                if(calc.getLast() != null)
+                if (calc.getLast() != null)
                     calc.delete(calc.getLast());
             }
         }).start();
@@ -78,7 +78,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void addition(View view) {
-        if(!MathOp) {
+        if (!MathOp) {
             mathOperation("addition");
             MathOp = true;
         }
@@ -88,18 +88,18 @@ public class MainActivity extends AppCompatActivity {
         if (!MathOp) {
             mathOperation("subtraction");
             MathOp = true;
-    }
+        }
     }
 
     public void multiplication(View view) {
-        if(!MathOp) {
+        if (!MathOp) {
             mathOperation("multiplication");
             MathOp = true;
         }
     }
 
     public void divide(View view) {
-        if(!MathOp) {
+        if (!MathOp) {
             mathOperation("divide");
             MathOp = true;
         }
@@ -108,6 +108,7 @@ public class MainActivity extends AppCompatActivity {
     @SuppressLint("SetTextI18n")
     private void mathOperation(String operation) {
         Operation = operation;
+        Result = Long.parseLong(ResultText.getText().toString());
         if (DB) {
             new Thread(new Runnable() {
                 @Override
@@ -133,17 +134,21 @@ public class MainActivity extends AppCompatActivity {
 
                     myHandler.sendEmptyMessage(WRITE_RESULT);
 
-                    try {
-                        Calculator calculator = new Calculator(1, Result, Operation);
-                        calc.insert(calculator);
-                        DB = true;
-                    } catch (IllegalStateException e) {
-                        e.printStackTrace();
-                    }
+                    Calculator calculator = new Calculator(1, Result, Operation);
+                    calc.delete(calc.getLast());
+                    calc.insert(calculator);
                 }
             }).start();
-
+        } else {
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    Calculator calculator = new Calculator(1, Result, Operation);
+                    calc.insert(calculator);
+                }
+            }).start();
         }
+        DB = true;
         New = true;
     }
 
@@ -156,6 +161,7 @@ public class MainActivity extends AppCompatActivity {
         write("2");
         MathOp = false;
     }
+
     public void ThirdDigit(View view) {
         write("3");
         MathOp = false;
@@ -185,29 +191,29 @@ public class MainActivity extends AppCompatActivity {
         write("8");
         MathOp = false;
     }
+
     public void NinthDigit(View view) {
         write("9");
         MathOp = false;
     }
+
     public void nullDigit(View view) {
         write("0");
         MathOp = false;
     }
 
     private void write(String digit) {
-        if(!New) {
+        if (!New) {
             String newString = ResultText.getText().toString() + digit;
             ResultText.setText(newString);
-        }
-        else
-        {
+        } else {
             New = false;
             ResultText.setText(digit);
         }
     }
 
     public void clear(View view) {
-        if(DB) {
+        if (DB) {
             new Thread(new Runnable() {
                 @Override
                 public void run() {
@@ -223,10 +229,13 @@ public class MainActivity extends AppCompatActivity {
 
     @SuppressLint("SetTextI18n")
     public void equally(View view) {
-        if(DB) {
+
+        if (DB) {
             new Thread(new Runnable() {
                 @Override
                 public void run() {
+                    myHandler.sendEmptyMessage(READ_RESULT);
+
                     switch (calc.getLast().operation) {
                         case "addition": {
                             Result = calc.getLast().result + Result;
@@ -246,18 +255,13 @@ public class MainActivity extends AppCompatActivity {
                         }
                     }
 
-                    calc.delete(calc.getLast());
-
-                    //ResultText.setText(Long.toString(Result));
                     myHandler.sendEmptyMessage(WRITE_RESULT);
+
+                    calc.delete(calc.getLast());
                     DB = false;
                 }
             }).start();
         }
-
-        if(ResultText.getText().toString() != "")
-            myHandler.sendEmptyMessage(READ_RESULT);
-            Result = Long.parseLong(ResultText.getText().toString());
 
         New = true;
         MathOp = true;
@@ -265,12 +269,12 @@ public class MainActivity extends AppCompatActivity {
 
     class MyHandler extends Handler {
 
-        @SuppressLint("SetTextI18n")
+        //@SuppressLint("SetTextI18n")
         @Override
         public void handleMessage(Message msg) {
-            if(msg.what == WRITE_RESULT)
+            if (msg.what == WRITE_RESULT)
                 ResultText.setText(Long.toString(Result));
-            if(msg.what == READ_RESULT)
+            if (msg.what == READ_RESULT)
                 Result = Long.parseLong(ResultText.getText().toString());
         }
     }
